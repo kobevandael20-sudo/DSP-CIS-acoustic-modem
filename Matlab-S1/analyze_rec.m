@@ -23,7 +23,7 @@ sig=sig+[sin(2*pi*2000*(0:1/fs:2))]';
 sig=sig+[sin(2*pi*4000*(0:1/fs:2))]';
 sig=sig+[sin(2*pi*6000*(0:1/fs:2))]';
 sig=zeros(fs*5,1);
-sig=awgn(sig,1)
+%sig=awgn(sig,1)
 %% Play and record.
 % Call to initparams()
 [simin,nbsecs] = initparams(sig,fs);
