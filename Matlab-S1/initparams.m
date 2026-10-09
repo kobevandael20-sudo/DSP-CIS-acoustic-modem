@@ -36,12 +36,10 @@ toplay = [zeros(2*fs,1);toplay;zeros(fs,1)];
 
 % Scale toplay to be between [-1,1] -
 % -> You can leave this commented until exercise 1.2.6
-toplay =toplay/max(toplay);
+%toplay =toplay/max(toplay);
 
 %% Create simin
 % Two column matrix: one column is toplay, one column is silence
-size(toplay)
-size(zeros(size(toplay,1),1))
 simin = [toplay zeros(size(toplay,1),1)];
 
 %% Calculate number of seconds in simin
