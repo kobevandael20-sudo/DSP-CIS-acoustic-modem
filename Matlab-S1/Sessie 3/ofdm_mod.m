@@ -47,9 +47,7 @@ fOFDM_frame = [zeros(1,P);QAM_matrix;zeros(1,P);flipud(conj(QAM_matrix))];
 % Apply the inverse Fourier transform (IFFT)
 OFDM_frame = ifft(fOFDM_frame);
 % Add in the cyclic prefix
-size(OFDM_frame)
 OFDM_frame = [OFDM_frame;OFDM_frame(end-Lcp+1:end,:)];
-size(OFDM_frame)
 % Serialize the set of OFDM frames
 OFDM_seq = reshape(OFDM_frame,size(OFDM_frame,1)*size(OFDM_frame,2),1);
 

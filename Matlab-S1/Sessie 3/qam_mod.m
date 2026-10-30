@@ -14,13 +14,13 @@ assert(sum(nextpow2(M)==log2(M))==length(M),'M is not a power of 2.')
 
 %% Append zero-bits to the end of the sequence to make the sequence 
 N = log2(M); % Number of bits per QAM symbol
-padLength = min([0,N-(mod(size(bit_seq,2),N))]); % Number of bits to append such that it can be divided nicely into the M-ary QAM format
+padLength = min([0,N-(mod(size(bit_seq,1),N))]) % Number of bits to append such that it can be divided nicely into the M-ary QAM format
 bit_seq = [bit_seq zeros(1,padLength)]; % Padded bit sequence
 % Check that the bit sequence is correctly padded
 assert( mod(length(bit_seq),sum(N))==0,'Bit sequence should contain a number of bits that is a multiple of log2(M).')
 
 %% Call to qammod() to obtain the M-ary QAM symbols
-QAM_seq = qammod(bit_seq',M,'UnitAveragePower',true,'PlotConstellation',false,'InputType','bit');
+%QAM_seq = qammod(bit_seq',M,'gray','UnitAveragePower',true,'PlotConstellation',false,'InputType','bit');
 
 end
 

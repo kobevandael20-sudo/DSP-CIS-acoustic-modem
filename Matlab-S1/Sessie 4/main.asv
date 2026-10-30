@@ -1,0 +1,40 @@
+% DMT-OFDM transmission scheme
+%% Cleanup
+clear; close all; clc;
+Nq=;
+M=2^Nq;
+N=402;
+Lcp=50;
+L=20;
+SNR=2000;
+channel=randi([0,20],L,1)/20;
+
+channel=[1,0,0];
+% Convert BMP image to bitstream
+[bitStream, imageData, colorMap, imageSize, bitsPerPixel] = imagetobitstream('image.bmp');
+
+% QAM modulation
+qamStream = qam_mod(bitStream,M);
+
+scatterplot(qamStream)
+% OFDM modulation
+ofdmStream = ofdm_mod(qamStream,N,Lcp);
+
+% Channel
+rxOfdmStream = fftfilt(channel,ofdmStream);
+
+% OFDM demodulation
+rxQamStream = ofdm_demod(rxOfdmStream,N,Lcp,channel);
+scatterplot(rxQamStream)
+% QAM demodulation
+rxBitStream = qam_demod(rxQamStream,M);
+
+% Compute BER
+berTransmission = ber(bitStream',rxBitStream');
+
+% Construct image from bitstream
+imageRx = bitstreamtoimage(rxBitStream, imageSize, bitsPerPixel);
+
+% Plot images
+subplot(2,1,1); colormap(colorMap); image(imageData); axis image; title('Original image'); drawnow;
+subplot(2,1,2); colormap(colorMap); image(imageRx); axis image; title(['Received image']); drawnow;

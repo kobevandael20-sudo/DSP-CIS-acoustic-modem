@@ -1,4 +1,4 @@
-function [ data_seq, CHANNELS ] = ofdm_demod( OFDM_seq, N, Lcp, varargin )
+function [ data_seq, CHANNELS ] = ofdm_demod( OFDM_seq, N, Lcp, channel,varargin )
 % OFDM demodulation
 %
 % INPUT:
@@ -85,13 +85,12 @@ OFDM_matrix = OFDM_matrix(1:end-Lcp,:);
 
 % Apply fft operation
 QAM_matrix = fft(OFDM_matrix);
-size(QAM_matrix)
 % Remove the redundant parts of QAM_matrix
 QAM_matrix = QAM_matrix(2:N/2,1:size(QAM_matrix,2));
 
 % Apply channel equalisation (you can ignore this until exercise 4.2.3)
 CHANNELS = 0;
-% QAM_matrix = ;
+QAM_matrix = fftfilt(channel.^-1,QAM_matrix);
 
 % Apply on-off mask (you can ignore this until exercise 5.1)
 % QAM_matrix = ;
