@@ -22,12 +22,19 @@ sig = wgn(fs*2,1,0);
 % Call to recplay.mdl to play simin and record simout
 sim('recplay');
 % Retrieve recorded output
-out=simout.signals.values(:,1);
+% Retrieve recorded output (compatible with R2024b and newer dataset formats)
+if isa(simout, 'Simulink.SimulationData.Dataset')
+    out = simout{1}.Values.Data;
+elseif isstruct(simout)
+    out = simout.signals.values(:,1);
+elseif isa(simout, 'timeseries')
+    out = simout.Data;
+else
+    out = simout; % fallback
+end
 
 %% Calculate the impulse response.
-r=sig';
-c=[sig(1) zeros(1,channelLength-1)];
-uMatrix = toeplitz(r,c); % Toeplitz matrix
+uMatrix = toeplitz(sig(:), [sig(1), zeros(1, channelLength-1)]);
 for i=1:1:size(out,1)
     if out(i)>(max(out)+min(out))/2
         yOnset=i-20;
@@ -37,7 +44,7 @@ end
 yOnset = 36000; % Determine start of recorded signal [samples]
 y = out(yOnset:yOnset+size(uMatrix,1)-1); % Extract the relevant output signal
 
-h = y\uMatrix; % Estimate impulse response
+h= uMatrix \ y; % Estimate impulse response
 
 save('IRest.mat','h'); % Save impulse response
 
@@ -49,11 +56,10 @@ xlabel('Time [samples]')
 ylabel('Impulse response [arb.]')
 % Magnitude response
 subplot(2,2,2)
-spectrogram(h)
-xlabel('Frequency [Hz]')
-ylabel('Magnitude response [dB]')
-subplot(2,2,3)
-plot(abs(fft(h,200)))
+[H, f] = freqz(h, 1, dftsize, fs);
+plot(f, pow2db(abs(H)));
+xlabel('Frequency [Hz]');
+ylabel('Magnitude [dB]');
 %% Filtered white noise Vs. recorded white noise.
 sig = wgn(fs*2,1,0); % Generate white noise signal    
 
@@ -63,7 +69,16 @@ gen_noise = fftfilt(h,sig);
 % Send the white noise across the channel
 [simin,nbsecs] = initparams(sig,fs);
 sim('recplay');
-rec_noise=simout.signals.values(:,1);
+% Retrieve recorded output (compatible with R2024b and newer dataset formats)
+if isa(simout, 'Simulink.SimulationData.Dataset')
+    rec_noise = simout{1}.Values.Data;
+elseif isstruct(simout)
+    out = simout.signals.values(:,1);
+elseif isa(simout, 'timeseries')
+    out = simout.Data;
+else
+    out = simout; % fallback
+end
 for i=1:1:size(rec_noise,1)
     if rec_noise(i)>(max(rec_noise)+min(rec_noise))/2
         noiseOnset=i-20;

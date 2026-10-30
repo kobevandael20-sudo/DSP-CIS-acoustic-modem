@@ -1,4 +1,4 @@
-function [ data_seq,data_seq_old, CHANNELS ] = ofdm_demod( OFDM_seq, N, Lcp, channel,varargin )
+function [ data_seq,data_seq_old, CHANNELS ] = ofdm_demod( OFDM_seq, N, Lcp, channel,streamLength,varargin )
 % OFDM demodulation
 %
 % INPUT:
@@ -101,4 +101,6 @@ QAM_matrix = QAM_matrix./channel_freq;
 data_seq_old=reshape(QAM_matrix_old,[],1);
 data_seq = reshape(QAM_matrix,[],1);
 
+% Remove padding symbols
+data_seq = data_seq(1:streamLength);
 end

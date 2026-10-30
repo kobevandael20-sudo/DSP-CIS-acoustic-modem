@@ -1,0 +1,113 @@
+% Channel estimation
+
+%% Cleanup
+clear; clc; close all
+
+%% Initialize script parameters.
+fs = 16000; % Sampling frequency [Hz]
+dftsize = fs*2; % Discrete Fourier Transform (DFT) size [Samples] 
+% Overlap length between subsequent frames in the
+% short-time-Fourier-transform (STFT) [samples]
+Noverlap = fs/4; 
+channelLength = 500; % Length of impulse response [samples]
+delay = fs*1; % Positive delay safety margin when aligning input and output [samples]
+
+%% Create the signal to be played.
+duration = 1; % Duration of the signal in [s]
+sig = wgn(fs*2,1,0);  
+
+%% Play and record.
+% Call to initparams()
+[simin,nbsecs] = initparams(sig,fs);
+% Call to recplay.mdl to play simin and record simout
+sim('recplay');
+% Retrieve recorded output
+% Retrieve recorded output (compatible with R2024b and newer dataset formats)
+if isa(simout, 'Simulink.SimulationData.Dataset')
+    out = simout{1}.Values.Data;
+elseif isstruct(simout)
+    out = simout.signals.values(:,1);
+elseif isa(simout, 'timeseries')
+    out = simout.Data;
+else
+    out = simout; % fallback
+end
+
+%% Calculate the impulse response.
+uMatrix = toeplitz(sig(:), [sig(1), zeros(1, channelLength-1)]);
+for i=1:1:size(out,1)
+    if out(i)>(max(out)+min(out))/2
+        yOnset=i-20;
+        break
+    end
+end
+yOnset = 36000; % Determine start of recorded signal [samples]
+y = out(yOnset:yOnset+size(uMatrix,1)-1); % Extract the relevant output signal
+
+h= uMatrix \ y; % Estimate impulse response
+
+save('IRest.mat','h'); % Save impulse response
+
+%% Plot IR.
+% Time domain signal
+figure; subplot(2,2,1)
+plot(h);
+xlabel('Time [samples]')
+ylabel('Impulse response [arb.]')
+% Magnitude response
+subplot(2,2,2)
+[H, f] = freqz(h, 1, dftsize, fs);
+plot(f, pow2db(abs(H)));
+xlabel('Frequency [Hz]');
+ylabel('Magnitude [dB]');
+%% Filtered white noise Vs. recorded white noise.
+sig = wgn(fs*2,1,0); % Generate white noise signal    
+
+% Convolve the IR with the white noise
+gen_noise = fftfilt(h,sig);                  
+
+% Send the white noise across the channel
+[simin,nbsecs] = initparams(sig,fs);
+sim('recplay');
+% Retrieve recorded output (compatible with R2024b and newer dataset formats)
+if isa(simout, 'Simulink.SimulationData.Dataset')
+    rec_noise = simout{1}.Values.Data;
+elseif isstruct(simout)
+    rec_noise = simout.signals.values(:,1);
+elseif isa(simout, 'timeseries')
+    rec_noise = simout.Data;
+else
+    rec_noise = simout; % fallback
+end
+for i=1:1:size(rec_noise,1)
+    if rec_noise(i)>(max(rec_noise)+min(rec_noise))/2
+        noiseOnset=i-20;
+        break
+    end
+end
+noiseOnset=36000;
+rec_noise_cut=rec_noise(noiseOnset:noiseOnset+fs*2);
+
+%% Spectrogram and PSD plot
+% Spectrogram
+figure;
+subplot(2,2,1);
+spectrogram(gen_noise); % Generated white noise
+subplot(2,2,2);
+spectrogram(rec_noise_cut); % Recorded white noise
+
+% PSD
+PSD_gen_noise =pwelch(gen_noise,dftsize,Noverlap) ; % Generated white noise PSD
+PSD_rec_noise = pwelch(rec_noise_cut,dftsize,Noverlap); % Recorded white noise PSD (ideally only when the signal is active)
+subplot(2,2,3)
+plot(pow2db(PSD_gen_noise));
+xlabel('Frequency (kHz)');
+ylabel('Power/frequency (dB/Hz)')
+title('Generated white noise.')
+% Output signal
+subplot(2,2,4)
+plot(pow2db(PSD_rec_noise));
+xlabel('Frequency (kHz)');
+ylabel('Power/frequency (dB/Hz)')
+title('Output signal.')
+sgtitle('Recorded white noise')

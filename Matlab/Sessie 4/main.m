@@ -15,9 +15,7 @@ load("channel_session4.mat","channel");
 
 % QAM modulation
 qamStream = qam_mod(bitStream,M);
-qamStream=awgn(qamStream,SNR,"measured")
-testBits = qam_demod(qamStream,M);
-fprintf('QAM-only BER: %.8f\n', ber(bitStream(:)',testBits(:)'));
+qamStream=awgn(qamStream,SNR,"measured");
 %scatterplot(qamStream)
 % OFDM modulation
 ofdmStream = ofdm_mod(qamStream,N,Lcp);
@@ -26,7 +24,7 @@ ofdmStream = ofdm_mod(qamStream,N,Lcp);
 rxOfdmStream = fftfilt(channel,ofdmStream);
 
 % OFDM demodulation
-[rxQamStream,old_qamstream] = ofdm_demod(rxOfdmStream,N,Lcp,channel);
+[rxQamStream,old_qamstream] = ofdm_demod(rxOfdmStream,N,Lcp,channel,numel(qamStream));
 %figure;
 %scatterplot(qamStream)
 %figure;

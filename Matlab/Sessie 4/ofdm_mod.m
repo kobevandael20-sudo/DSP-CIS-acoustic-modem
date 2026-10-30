@@ -39,7 +39,14 @@ end
 
 %% Construct the OFDM sequence
 % Put the QAM symbols into matrix of N/2-1 rows
-QAM_matrix = reshape(QAM_seq,N/2-1,[]); 
+% Pad QAM sequence with zeros to fill the last OFDM frame
+symbolsPerFrame = N/2 - 1;
+streamLength = numel(QAM_seq);
+
+paddingLength = mod(-streamLength, symbolsPerFrame);
+QAM_seq = [QAM_seq(:); zeros(paddingLength,1)];
+
+QAM_matrix = reshape(QAM_seq, symbolsPerFrame, []);
 P=size(QAM_matrix,2);
 % Construct the OFDM frames according to Figure 2 in session 3
 fOFDM_frame = [zeros(1,P);QAM_matrix;zeros(1,P);flipud(conj(QAM_matrix))];
