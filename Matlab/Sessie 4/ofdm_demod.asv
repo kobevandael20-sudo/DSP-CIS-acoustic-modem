@@ -1,4 +1,4 @@
-function [ data_seq, CHANNELS ] = ofdm_demod( OFDM_seq, N, Lcp, channel,varargin )
+function [ data_seq,data_seq_old, CHANNELS ] = ofdm_demod( OFDM_seq, N, Lcp,varargin )
 % OFDM demodulation
 %
 % INPUT:
@@ -87,17 +87,27 @@ OFDM_matrix = OFDM_matrix(Lcp+1:end,:);
 QAM_matrix = fft(OFDM_matrix);
 % Remove the redundant parts of QAM_matrix
 QAM_matrix = QAM_matrix(2:N/2,1:size(QAM_matrix,2));
-
+QAM_matrix_old=QAM_matrix;
 % Apply channel equalisation (you can ignore this until exercise 4.2.3)
 CHANNELS = 0;
-channel_freq=fft(channel,N/2-1);
-chann
+channel_freq_full = fft(channel, N);
+channel_freq = channel_freq_full(2:N/2);
 QAM_matrix = QAM_matrix./channel_freq;
 
 % Apply on-off mask (you can ignore this until exercise 5.1)
-% QAM_matrix = ;
+QAM_matrix_rec=zeros(floor(size(QAM_matrix,1)*(sum(ON_OFF_mask,1)/size(ON_OFF_mask,1))),size(QAM_matrix,2));
+n=1;
+for i=1:size(ON_OFF_mask,1)
+    if ON_OFF_mask(i)==1
+        QAM_matrix_rec(n,:)=QAM_matrix(i);
+        n=n+1;
+    end
+end
 
 % Supply streamLength number of symbols (you can ignore this until exercise 4.2)
+data_seq_old=reshape(QAM_matrix_old,[],1);
 data_seq = reshape(QAM_matrix,[],1);
 
+% Remove padding symbols
+data_seq = data_seq(1:streamLength);
 end

@@ -1,4 +1,4 @@
-function [ OFDM_seq, nbPackets ] = ofdm_mod( QAM_seq, N, Lcp, varargin)
+function [ OFDM_seq, nbPackets ] = ofdm_mod( QAM_seq, N, Lcp,varargin)
 % OFDM modulation
 %
 % INPUT:
@@ -43,13 +43,21 @@ end
 symbolsPerFrame = N/2 - 1;
 streamLength = numel(QAM_seq);
 
-paddingLength = mod(-streamLength, symbolsPerFrame);
+paddingLength = mod(-streamLength, symbolsPerFrame*sum(ON_OFF_mask,1)/size(ON_OFF_mask,1));
 QAM_seq = [QAM_seq(:); zeros(paddingLength,1)];
 
-QAM_matrix = reshape(QAM_seq, symbolsPerFrame, []);
-P=size(QAM_matrix,2);
+N_active = sum(ON_OFF_mask);
+
+QAM_matrix = reshape(QAM_seq, N_active, []);
+save('QAM1',"QAM_matrix")
+QAM_matrix_new = zeros(length(ON_OFF_mask), size(QAM_matrix,2));
+
+QAM_matrix_new(ON_OFF_mask == 1,:) = QAM_matrix;
+save('QAM4',"QAM_matrix_new")
+
+P=size(QAM_matrix_new,2);
 % Construct the OFDM frames according to Figure 2 in session 3
-fOFDM_frame = [zeros(1,P);QAM_matrix;zeros(1,P);flipud(conj(QAM_matrix))];
+fOFDM_frame = [zeros(1,P);QAM_matrix_new;zeros(1,P);flipud(conj(QAM_matrix_new))];
 
 % Apply the inverse Fourier transform (IFFT)
 OFDM_frame = ifft(fOFDM_frame);
